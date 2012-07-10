@@ -56,6 +56,9 @@ module Tinia
         ids = response.hits.collect{|h| h["id"]}
 
         proxy = self.tinia_scope(ids)
+        
+        proxy = proxy.order("FIELD(#{self.primary_key}, #{ids.flatten.join(',')})") if ids.flatten.any?
+        
         proxy.per_page = opts[:per_page].to_i    
         proxy.current_page = opts[:page].to_i
         proxy.total_entries = response.found  
@@ -70,24 +73,17 @@ module Tinia
           self.cloud_search_request(query, opts)
         )
       end
-
+      
       # generate a request to CloudSearch
+      #
+      # @param [String] query the query string
+      # @param [Hash] opts options to filter the search
       def cloud_search_request(query, opts)
-        AWSCloudSearch::SearchRequest.new.tap do |req|
-          if query.nil?
-            req.bq = "type:'#{self.base_class.name}'"
-          # this is a rich query using Solr syntax of () or : or ''
-          elsif query =~ /[:\)\(']/
-            req.bq = "(and #{query} type:'#{self.base_class.name}')" 
-          else
-            req.bq = "(and '#{query}' type:'#{self.base_class.name}')" 
-          end
-          req.size = opts[:per_page].to_i
-          req.start = (opts[:page].to_i - 1) * opts[:per_page].to_i
-        end
+        Tinia::QueryBuilder.new(self, query, opts).build
       end
-
+      
     end
+    
   end
 
 end

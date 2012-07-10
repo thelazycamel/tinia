@@ -4,7 +4,7 @@ module Tinia
     def self.included(klass)
       klass.send(:extend, ClassMethods)
       klass.class_eval do
-        class_attribute :cloud_search_domain
+        class_attribute :cloud_search_config
       end
     end
 
@@ -14,7 +14,7 @@ module Tinia
       def cloud_search_connection
         @cloud_search_connection ||= begin
           Tinia.connection(
-            self.cloud_search_domain
+            self.cloud_search_config.cloud_search_domain
           )
         end
       end

@@ -9,12 +9,24 @@ module Tinia
         self.in_cloud_search_batch_documents = false
 
         # set up our callbacks
-        after_save(:add_to_cloud_search)
-        after_destroy(:delete_from_cloud_search)
+        after_save(:add_to_cloud_search_callback)
+        after_destroy(:delete_from_cloud_search_callback)
       end
     end
 
     module InstanceMethods
+      
+      # Default after_save callback.
+      # Can be overriden by the model.
+      def add_to_cloud_search_callback
+        self.add_to_cloud_search
+      end
+      
+      # Default after_destroy callback.
+      # Can be overriden by the model.
+      def delete_from_cloud_search_callback
+        self.delete_from_cloud_search
+      end
 
       # add ourself as a document to CloudSearch
       def add_to_cloud_search
@@ -34,11 +46,11 @@ module Tinia
         AWSCloudSearch::Document.new.tap do |d|
           d.id = self.id
           d.lang = "en"
-          d.version = self.updated_at.to_i
+          d.version = Time.now.utc.to_i
           # class name
           d.add_field("type", self.class.base_class.name)
           self.cloud_search_data.each_pair do |k,v|
-            d.add_field(k.to_s, v.to_s)
+            d.add_field(k.to_s, v)
           end
         end
       end
@@ -79,6 +91,27 @@ module Tinia
 
       # reindex the entire collection
       def cloud_search_reindex(*args)
+        self.cloud_search_batch_documents do
+          self.find_each(*args) do |record|
+            record.add_to_cloud_search
+          end
+        end
+      end
+      
+      # rebuild an index from scratch.
+      def cloud_search_rebuild(*args)
+        total_entries = self.cloud_search(:per_page => 1).total_entries
+        
+        # delete all documents.
+        # the CloudSearch API does not have a "delete all" method, so
+        # delete in batches.
+        self.cloud_search_batch_documents do
+          self.cloud_search(:per_page => total_entries).each do |record|
+            record.delete_from_cloud_search
+          end
+        end
+        
+        # add all document that meet the parameters.
         self.cloud_search_batch_documents do
           self.find_each(*args) do |record|
             record.add_to_cloud_search
