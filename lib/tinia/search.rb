@@ -11,6 +11,7 @@ module Tinia
         }
         scope :tinia_scope, scope_def do 
           include WillPaginateMethods
+          include CloudSearchAttributes
         end
       end
     end
@@ -42,6 +43,11 @@ module Tinia
       end
 
     end
+    
+    # keeps search results meta-data
+    module CloudSearchAttributes
+      attr_accessor :cloud_search_ids
+    end
 
     module ClassMethods
       
@@ -59,6 +65,7 @@ module Tinia
         
         proxy = proxy.order("FIELD(#{self.primary_key}, #{ids.flatten.join(',')})") if ids.flatten.any?
         
+        proxy.cloud_search_ids = ids
         proxy.per_page = opts[:per_page].to_i    
         proxy.current_page = opts[:page].to_i
         proxy.total_entries = response.found  

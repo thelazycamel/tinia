@@ -43,13 +43,9 @@ module Tinia
 
       # wrapper for a fully formed AWSCloudSearch::Document
       def cloud_search_document
-        AWSCloudSearch::Document.new.tap do |d|
+        self.class.cloud_search_document.tap do |d|
           d.id = self.id
-          d.lang = "en"
-          d.version = Time.now.utc.to_i
-          # class name
-          d.add_field("type", self.class.base_class.name)
-          self.cloud_search_data.each_pair do |k,v|
+          self.cloud_search_data.each_pair do |k, v|
             d.add_field(k.to_s, v)
           end
         end
@@ -65,6 +61,16 @@ module Tinia
     end
 
     module ClassMethods
+
+      # wrapper for a fully formed AWSCloudSearch::Document
+      def cloud_search_document
+        AWSCloudSearch::Document.new.tap do |d|
+          d.lang = "en"
+          d.version = Time.now.utc.to_i
+          # class name
+          d.add_field("type", self.base_class.name)
+        end
+      end
 
       # class method to add documents
       def cloud_search_add_document(doc)
@@ -93,13 +99,14 @@ module Tinia
       def cloud_search_reindex(*args)
         self.cloud_search_batch_documents do
           self.find_each(*args) do |record|
+            Tinia.logger.debug("Adding record #{record.id}")
             record.add_to_cloud_search
           end
         end
       end
       
-      # rebuild an index from scratch.
-      def cloud_search_rebuild(*args)
+      # remove all documents from cloud_search_domain
+      def cloud_search_clear_index
         total_entries = self.cloud_search(:per_page => 1).total_entries
         Tinia.logger.debug("Removing #{total_entries} documents...")
         
@@ -107,21 +114,21 @@ module Tinia
         # the CloudSearch API does not have a "delete all" method, so
         # delete in batches.
         self.cloud_search_batch_documents do
-          self.cloud_search(:per_page => total_entries).each do |record|
-            Tinia.logger.debug("Removing record #{record.id}")
-            record.delete_from_cloud_search
-          end
-        end
-        
-        # add all document that meet the parameters.
-        self.cloud_search_batch_documents do
-          self.find_each(*args) do |record|
-            Tinia.logger.debug("Adding record #{record.id}")
-            record.add_to_cloud_search
+          self.cloud_search(:per_page => total_entries).cloud_search_ids.each do |id|
+            Tinia.logger.debug("Removing record #{id}")
+            doc = Product.cloud_search_document
+            doc.id = id
+            self.cloud_search_delete_document(doc)
           end
         end
       end
-
+      
+      # rebuild an index from scratch.
+      def cloud_search_rebuild(*args)
+        self.cloud_search_clear_index
+        self.cloud_search_reindex(*args)
+      end
+      
       # new instance of AWSCloudSearch::DocumentBatcher
       def cloud_search_document_batcher
         @cloud_search_document_batcher ||= begin
