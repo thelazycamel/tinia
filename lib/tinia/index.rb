@@ -110,17 +110,19 @@ module Tinia
         total_entries = self.cloud_search(:per_page => 1).total_entries
         Tinia.logger.debug("Removing #{total_entries} documents...")
         
+        ids = self.cloud_search(:per_page => total_entries).cloud_search_ids
+        
         # delete all documents.
         # the CloudSearch API does not have a "delete all" method, so
         # delete in batches.
         self.cloud_search_batch_documents do
-          self.cloud_search(:per_page => total_entries).cloud_search_ids.each do |id|
+          ids.each do |id|
             Tinia.logger.debug("Removing record #{id}")
             doc = Product.cloud_search_document
             doc.id = id
             self.cloud_search_delete_document(doc)
           end
-        end
+        end if ids.any? # CloudSearch returns an error if the batch is empty
       end
       
       # rebuild an index from scratch.
