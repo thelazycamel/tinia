@@ -6,7 +6,7 @@ module Tinia
     end
     
     initializer "tinia.logger" do
-      Tinia.logger = Rails.logger
+      Tinia.logger = Logger.new(Rails.root.join("log", "tinia.#{Rails.env}.log"))
     end
     
     console do
