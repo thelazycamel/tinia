@@ -20,7 +20,6 @@ Gem::Specification.new do |s|
     ".document",
     ".rspec",
     "Gemfile",
-    "Gemfile.lock",
     "Guardfile",
     "LICENSE.txt",
     "README.rdoc",
