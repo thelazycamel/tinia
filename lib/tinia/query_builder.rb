@@ -12,7 +12,7 @@ module Tinia
 
       AWSCloudSearch::SearchRequest.new.tap do |req|
 
-        bq_terms = ["type:'#{@klass.base_class.name}'"]
+        bq_terms = ["type:'#{@klass.name}'"]
 
         if @query.present?
           if @query =~ /[:\)\(']/
