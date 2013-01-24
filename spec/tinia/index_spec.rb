@@ -16,6 +16,11 @@ describe Tinia::Index do
       t.string(:type)
       t.timestamps
     end
+    
+    # TODO: find a better way to stub Rails.
+    module Rails
+      def self.root; '/'; end
+    end
 
     MockIndexClass = Class.new(ActiveRecord::Base) do
       indexed_with_cloud_search do |config|
@@ -100,17 +105,16 @@ describe Tinia::Index do
     it_should_behave_like("batching")
   end
 
-  context ".cloud_search_domain" do
+  context ".cloud_search_config" do
 
     it "should be an inheritable attribute" do
       NewKlass = Class.new(MockIndexWithData)
-      NewKlass.cloud_search_domain.should eql(
-        MockIndexWithData.cloud_search_domain
+      NewKlass.cloud_search_config.should eql(
+        MockIndexWithData.cloud_search_config
       )
     end
 
   end
-
 
   context ".cloud_search_reindex" do
 

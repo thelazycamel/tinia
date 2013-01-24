@@ -1,11 +1,17 @@
 require 'aws_cloud_search'
+require 'logger'
 require 'tinia/connection'
 require 'tinia/exceptions'
 require 'tinia/index'
+require 'tinia/configuration'
+require 'tinia/logger'
+require 'tinia/query_builder'
 require 'tinia/search'
 
-module Tinia
+require 'tinia/railtie' if defined?(Rails)
 
+module Tinia
+  
   def self.connection(domain = "default")
     @connections ||= {}
     @connections[domain] ||= AWSCloudSearch::CloudSearch.new(domain)
@@ -30,13 +36,13 @@ module Tinia
           self.send(:include, mod) 
         end
       end
+      
+      self.cloud_search_config = Tinia::Configuration.new(self)
+      
       # config block
-      yield(self) if block_given?
-
-      # ensure config is all set
-      unless self.cloud_search_domain.present?
-        raise Tinia::MissingSearchDomain.new(self)
-      end
+      yield(self.cloud_search_config) if block_given?
+      
+      self.cloud_search_config.validate!
     end
 
   end

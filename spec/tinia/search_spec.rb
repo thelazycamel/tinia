@@ -9,7 +9,12 @@ describe Tinia::Search do
       t.string("name")
       t.timestamps
     end
-
+    
+    # TODO: find a better way to stub Rails.
+    module Rails
+      def self.root; '/'; end
+    end
+    
     MockClass = Class.new(ActiveRecord::Base) do
       indexed_with_cloud_search do |config|
         config.cloud_search_domain = "mock-class"
@@ -20,7 +25,13 @@ describe Tinia::Search do
       }
 
     end
-
+    
+    MockClass.cloud_search_config.index_fields = {
+      'id'     => Tinia::IndexField.new(:name => 'id', :type => 'uint'),
+      'name'   => Tinia::IndexField.new(:name => 'name', :type => 'text'),
+      'gender' => Tinia::IndexField.new(:name => 'gender', :type => 'literal')
+    }
+      
   end
 
   context "#cloud_search" do
@@ -159,6 +170,55 @@ describe Tinia::Search do
       end
 
     end
+    
+    context "search parameters" do
+      
+      let(:search_request) do
+        search_request = AWSCloudSearch::SearchRequest.new
+        search_request
+      end
+      
+      it "should always include the class type in the query" do
+        
+        proxy = MockClass.cloud_search('my query')
+        search_request.bq.should match(/type:'MockClass'/)
+        
+      end
+      
+      it "should convert parameter values to their correct type
+          in the index" do
+          
+          proxy = MockClass.cloud_search({:name => 'some name', :id => 1, :gender => 'female'})
+          search_request.bq.should eql("(and gender:'female' id:1 name:'some name' type:'MockClass')")
+        
+      end
+      
+      it "should allow multiple values for one uint field" do
+        proxy = MockClass.cloud_search(:id => [1, 2, 3])
+        search_request.bq.should eql("(and (or id:1 id:2 id:3) type:'MockClass')")
+      end
+      
+      it "should allow multiple values for one literal/text field" do
+        proxy = MockClass.cloud_search(:gender => ['male', 'female'])
+        search_request.bq.should eql("(and (or gender:'male' gender:'female') type:'MockClass')")
+      end
+      
+      it "should allow ranges" do
+        proxy = MockClass.cloud_search(:id => 100..200)
+        search_request.bq.should eql("(and id:100..200 type:'MockClass')")
+      end
+      
+    end
+    
+    context "result ordering" do
+
+      it "should be passed in the parameters" do
+        proxy = MockClass.cloud_search('my query', :order_by => 'name', :sort_mode => :desc)
+        search_request.rank.should eql('-name')
+      end
+
+    end
+    
   end
   
 end
