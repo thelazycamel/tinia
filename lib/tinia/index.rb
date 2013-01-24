@@ -38,7 +38,11 @@ module Tinia
       # empty implementation - re-implement
       # or we might end up doing some meta-programming here
       def cloud_search_data
-        {}
+        data = {}
+        self.cloud_search_config.index_fields.keys.each do |key|
+          data[key] = self.send(key)
+        end
+        data
       end
 
       # wrapper for a fully formed AWSCloudSearch::Document
