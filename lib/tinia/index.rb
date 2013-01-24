@@ -15,13 +15,13 @@ module Tinia
     end
 
     module InstanceMethods
-      
+
       # Default after_save callback.
       # Can be overriden by the model.
       def add_to_cloud_search_callback
         self.add_to_cloud_search
       end
-      
+
       # Default after_destroy callback.
       # Can be overriden by the model.
       def delete_from_cloud_search_callback
@@ -35,7 +35,7 @@ module Tinia
         )
       end
 
-      # empty implementation - re-implement 
+      # empty implementation - re-implement
       # or we might end up doing some meta-programming here
       def cloud_search_data
         {}
@@ -104,33 +104,33 @@ module Tinia
           end
         end
       end
-      
+
       # remove all documents from cloud_search_domain
       def cloud_search_clear_index
         total_entries = self.cloud_search(:per_page => 1).total_entries
         Tinia.logger.debug("Removing #{total_entries} documents...")
-        
+
         ids = self.cloud_search(:per_page => total_entries).cloud_search_ids
-        
+
         # delete all documents.
         # the CloudSearch API does not have a "delete all" method, so
         # delete in batches.
         self.cloud_search_batch_documents do
           ids.each do |id|
             Tinia.logger.debug("Removing record #{id}")
-            doc = Product.cloud_search_document
+            doc = self.cloud_search_document
             doc.id = id
             self.cloud_search_delete_document(doc)
           end
         end if ids.any? # CloudSearch returns an error if the batch is empty
       end
-      
+
       # rebuild an index from scratch.
       def cloud_search_rebuild(*args)
         self.cloud_search_clear_index
         self.cloud_search_reindex(*args)
       end
-      
+
       # new instance of AWSCloudSearch::DocumentBatcher
       def cloud_search_document_batcher
         @cloud_search_document_batcher ||= begin
