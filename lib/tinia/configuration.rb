@@ -2,7 +2,7 @@ module Tinia
 
   class Configuration
 
-    attr_accessor :index_fields, :cloud_search_domain
+    attr_accessor :index_fields, :cloud_search_domain, :cloud_search_region
 
     def initialize(klass)
       @index_fields = {}

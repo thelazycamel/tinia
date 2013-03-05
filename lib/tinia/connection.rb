@@ -15,7 +15,7 @@ module Tinia
         @cloud_search_connection ||= begin
           Tinia.connection(
             self.cloud_search_config.cloud_search_domain,
-            self.cloud_search_config.region
+            self.cloud_search_config.cloud_search_region
           )
         end
       end
