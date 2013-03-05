@@ -11,10 +11,10 @@ require 'tinia/search'
 require 'tinia/railtie' if defined?(Rails)
 
 module Tinia
-  
-  def self.connection(domain = "default")
+
+  def self.connection(domain = "default", region = "us-east-1")
     @connections ||= {}
-    @connections[domain] ||= AWSCloudSearch::CloudSearch.new(domain)
+    @connections[domain] ||= AWSCloudSearch::CloudSearch.new(domain,region)
   end
 
   # activate for ActiveRecord
@@ -33,15 +33,15 @@ module Tinia
       ]
       mods.each do |mod|
         unless self.included_modules.include?(mod)
-          self.send(:include, mod) 
+          self.send(:include, mod)
         end
       end
-      
+
       self.cloud_search_config = Tinia::Configuration.new(self)
-      
+
       # config block
       yield(self.cloud_search_config) if block_given?
-      
+
       self.cloud_search_config.validate!
     end
 

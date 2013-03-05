@@ -18,6 +18,7 @@ module Tinia
         end
 
         @cloud_search_domain = class_config['search_domain']
+        @cloud_search_region = class_config['region']
       end
     end
 
