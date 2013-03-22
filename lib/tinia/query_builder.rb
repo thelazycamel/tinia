@@ -15,7 +15,7 @@ module Tinia
         bq_terms = ["type:'#{@klass.name}'"]
 
         if @query.present?
-          if @query =~ /[:\)\(']/
+          if @query =~ /[:\)\(]/
             # The query is already an expression, not just a text phrase
             bq_terms << @query
           else
