@@ -63,7 +63,7 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<yard>, ["~> 0.7"])
     else
       s.add_dependency(%q<aws_cloud_search>, [">= 0"])
-      s.add_dependency(%q<rails>, ["~> 3.1.0"])
+      s.add_dependency(%q<rails>, ["~> 3.2.0"])
       s.add_dependency(%q<bundler>, ["~> 1.0.0"])
       s.add_dependency(%q<guard-rspec>, [">= 0"])
       s.add_dependency(%q<jeweler>, ["~> 1.8.3"])
